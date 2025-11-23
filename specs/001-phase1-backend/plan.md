@@ -1,207 +1,222 @@
-# Implementation Plan: Phase 1 Backend Skeleton
+# Implementation Plan: Phase 1 Backend Skeleton (UPDATED)
 
-**Branch**: `001-phase1-backend` | **Date**: 2025-11-23 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-phase1-backend/spec.md`
+**Branch**: `001-phase1-backend` | **Date**: 2025-11-23 (Updated) | **Spec**: [spec.md](./spec.md)
 
-**Note**: This plan provides technical implementation details for Phase 1 backend foundation.
+**Note**: This plan reflects the updated specification after clarification. Requirements increased from 38 to 56.
 
 ## Summary
 
-Phase 1 establishes the foundational backend infrastructure for Instant Integrity MVP with:
-- **FastAPI** REST API with JWT authentication
-- **PostgreSQL** database for users, samples, and results
-- **Redis** cache for session/state management
-- **Docker** containerization with docker-compose orchestration
-- User registration, login, and authenticated sample upload endpoints
-- Mock authenticity analysis returning placeholder results
+Phase 1 delivers a **production-ready** backend with:
+- FastAPI REST API + JWT auth + **email verification**
+- PostgreSQL (users, samples, results, **verification tokens**)
+- Redis (caching + **rate limiting**)
+- **Rate limiting** (brute force/DoS protection)
+- **Email verification** (token-based validation)
+- **Sentry integration** (error tracking)
+- **Sample types** (flour, spice, herb, other)
+- Mock authenticity analysis
+- **Comprehensive CI/CD** (unit + integration tests)
 
-This phase delivers a working API that demonstrates end-to-end flow from user registration through sample upload and result retrieval, setting the foundation for Phase 2 chemometric model integration.
+### Updates from Clarifications:
+1. **Rate Limiting**: Redis-based protection (5 login/min, 10 upload/hour, 100 req/min)
+2. **Email Verification**: Token-based before login access
+3. **Sentry**: Environment-based error tracking
+4. **Sample Types**: Multi-industry support
+5. **CI Tests**: Both unit AND integration tests
+
+**Impact**: 38→56 requirements (+18), 3→4 entities, 2-3→3-4 weeks
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+
-**Primary Dependencies**: 
-- FastAPI 0.104+ (async web framework)
-- Uvicorn 0.24+ (ASGI server)
-- SQLAlchemy 2.0+ (ORM)
-- Pydantic 2.0+ (validation)
-- psycopg2-binary 2.9+ (PostgreSQL driver)
-- python-jose[cryptography] 3.3+ (JWT)
-- passlib[bcrypt] 1.7+ (password hashing)
-- redis 5.0+ (cache client)
-- python-multipart (file upload)
-- alembic 1.12+ (migrations)
+**Language**: Python 3.11+
+**Key Dependencies**: 
+- FastAPI 0.104+, Uvicorn 0.24+, SQLAlchemy 2.0+, Pydantic 2.0+
+- psycopg2-binary 2.9+, asyncpg 0.29+
+- python-jose[cryptography] 3.3+, passlib[bcrypt] 1.7+
+- redis 5.0+
+- **slowapi 0.1.9+** (rate limiting) **[NEW]**
+- **sentry-sdk[fastapi] 1.40+** (error tracking) **[NEW]**
+- **aiosmtplib 3.0+** or **sendgrid 6.11+** (email) **[NEW]**
+- **itsdangerous 2.1+** (token generation) **[NEW]**
+- alembic 1.12+, pytest 7.4+, httpx
 
-**Storage**: PostgreSQL 15+ (primary), Redis 7+ (cache)
-**Testing**: pytest 7.4+, pytest-asyncio, httpx (API testing)
-**Target Platform**: Linux containers (Docker), local development on macOS/Linux/Windows with Docker Desktop
-**Project Type**: Web backend (single service architecture for Phase 1)
-**Performance Goals**: 
-- Registration/login < 2 seconds
-- CSV upload processing < 5 seconds
-- Support 50 concurrent registrations, 100 concurrent authenticated requests
+**Storage**: PostgreSQL 15+ + Redis 7+
+**Performance**: <2s auth, <5s upload, 50 concurrent registrations, 100 concurrent requests
+**Scope**: 4 entities, 7 endpoints, ~3000-4000 lines Python, 3-4 weeks
 
-**Constraints**: 
-- No external API dependencies
-- Zero-cost development (free-tier services only)
-- Docker-based deployment from day 1
-- All secrets via environment variables
-- API response times < 1 second for error cases
+## Constitution Check ✅ PASSED
 
-**Scale/Scope**: 
-- Phase 1: Single developer, ~2-3 weeks
-- 3 main entities (User, Sample, Result)
-- 6 API endpoints (register, login, upload, get result, health, docs)
-- ~2000-3000 lines of Python code estimated
-- Foundation for 10k+ users in future phases
+All principles satisfied with enhancements:
+- ✅ Security-First: JWT + **email verification** + **rate limiting** + bcrypt + input validation
+- ✅ Zero-Cost: Free tiers (**SendGrid**, **Sentry**)
+- ✅ TDD: **Unit + integration tests in CI**
+- ✅ Observability: Logging + **Sentry** + health checks
+- ✅ Data Integrity: **Sample types** + model versioning
+- ✅ API-First: REST + OpenAPI + **rate limit headers**
 
-## Constitution Check
+## Updated Database Schema
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+### 1. User (UPDATED):
+- Added: `email_verified BOOLEAN DEFAULT FALSE`
 
-### ✅ Security-First Development (NON-NEGOTIABLE)
-- JWT authentication on all protected endpoints ✓
-- Bcrypt password hashing ✓
-- Pydantic input validation on all endpoints ✓
-- Environment variables for secrets (JWT_SECRET, DATABASE_URL) ✓
-- No hardcoded credentials ✓
-- SQL injection prevention via SQLAlchemy ORM ✓
-- CORS configuration for future frontend ✓
-
-### ✅ Phased Delivery & Iterative Development
-- Clear Phase 1 scope: authentication + mock upload ✓
-- Working demonstrable API at end of Phase 1 ✓
-- No Phase 2 features (real ML models) in Phase 1 ✓
-- Acceptance criteria defined for each user story ✓
-
-### ✅ Zero-Cost Development
-- All dependencies are open-source ✓
-- Docker and docker-compose for local development ✓
-- PostgreSQL and Redis via Docker (no cloud services) ✓
-- GitHub Actions for CI (free tier) ✓
-- Optional Heroku/Render deployment (free tier) ✓
-
-### ✅ Data Integrity & Scientific Rigor
-- Phase 1: Mock results only (documented as placeholder) ✓
-- Database schema designed for Phase 2 model versioning ✓
-- Result records include model_version field ✓
-- Transparent that Phase 1 uses mock logic ✓
-
-### ✅ Test-Driven Development
-- Unit tests for auth service, security functions ✓
-- Integration tests for API endpoints ✓
-- pytest fixtures for database and test client ✓
-- CI pipeline runs tests before merge ✓
-- Minimum 80% code coverage target ✓
-
-### ✅ API-First Design
-- REST API with Pydantic request/response schemas ✓
-- OpenAPI documentation auto-generated by FastAPI ✓
-- Consistent error response format ✓
-- Stateless design (JWT tokens, no server-side sessions) ✓
-- Versioned API structure (/api/v1/) prepared ✓
-
-### ✅ Observability & Transparency
-- Python logging configured (INFO, ERROR levels) ✓
-- Request/response logging for debugging ✓
-- Health check endpoint for monitoring ✓
-- Optional Sentry integration prepared (env var) ✓
-- Database connection errors logged ✓
-
-**Gate Status**: ✅ PASSED - All constitution principles satisfied
-
-## Project Structure
-
-### Documentation (this feature)
-
-```text
-specs/001-phase1-backend/
-├── spec.md              # Feature specification (✅ complete)
-├── plan.md              # This file - implementation plan
-├── research.md          # Technical decisions and rationale
-├── data-model.md        # Database schema design
-├── quickstart.md        # Developer setup and testing guide
-├── contracts/           # API contracts (OpenAPI specs)
-│   ├── auth.yaml
-│   ├── samples.yaml
-│   └── results.yaml
-└── checklists/
-    └── requirements.md  # Specification quality checklist (✅ complete)
+### 2. EmailVerificationToken (NEW):
+```sql
+CREATE TABLE email_verification_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    token VARCHAR(255) UNIQUE,
+    expires_at TIMESTAMP,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
-### Source Code (repository root)
+### 3. Sample (UPDATED):
+- Added: `sample_type VARCHAR(50) CHECK (sample_type IN ('flour','spice','herb','other'))`
 
-```text
-instant-integrity-mvp/
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                    # FastAPI application entrypoint
-│   │   ├── core/                      # Configuration and shared utilities
-│   │   │   ├── __init__.py
-│   │   │   ├── config.py              # Settings (env vars, constants)
-│   │   │   ├── database.py            # DB connection, session management
-│   │   │   └── security.py            # JWT, password hashing, auth helpers
-│   │   ├── models/                    # SQLAlchemy ORM models
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py                # User model
-│   │   │   ├── sample.py              # Sample model
-│   │   │   └── result.py              # Result model
-│   │   ├── schemas/                   # Pydantic request/response schemas
-│   │   │   ├── __init__.py
-│   │   │   ├── auth.py                # Login, register, token schemas
-│   │   │   ├── sample.py              # Upload, sample response schemas
-│   │   │   └── result.py              # Result response schemas
-│   │   ├── routes/                    # API endpoint definitions
-│   │   │   ├── __init__.py
-│   │   │   ├── auth.py                # POST /auth/register, /auth/login
-│   │   │   ├── samples.py             # POST /samples/upload
-│   │   │   └── results.py             # GET /results/{sample_id}
-│   │   ├── services/                  # Business logic
-│   │   │   ├── __init__.py
-│   │   │   ├── auth_service.py        # User registration, authentication
-│   │   │   └── analysis_service.py    # CSV parsing, mock result generation
-│   │   └── utils/                     # Helper functions
-│   │       ├── __init__.py
-│   │       └── csv_parser.py          # CSV validation and parsing
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   ├── conftest.py                # pytest fixtures (test DB, client)
-│   │   ├── unit/
-│   │   │   ├── __init__.py
-│   │   │   ├── test_security.py       # Password hashing, JWT tests
-│   │   │   ├── test_csv_parser.py     # CSV validation tests
-│   │   │   └── test_mock_analysis.py  # Mock result generation tests
-│   │   └── integration/
-│   │       ├── __init__.py
-│   │       ├── test_auth_api.py       # Register, login endpoint tests
-│   │       ├── test_samples_api.py    # Upload endpoint tests
-│   │       └── test_results_api.py    # Result retrieval tests
-│   ├── alembic/                       # Database migrations
-│   │   ├── versions/                  # Migration scripts
-│   │   └── env.py                     # Alembic config
-│   ├── alembic.ini                    # Alembic configuration
-│   ├── requirements.txt               # Python dependencies
-│   ├── Dockerfile                     # Backend container image
-│   └── .env.example                   # Example environment variables
-├── docker-compose.yml                 # Orchestration (backend, postgres, redis)
-├── .github/
-│   └── workflows/
-│       └── ci.yml                     # GitHub Actions (test, build)
-└── README.md                          # Updated with setup instructions
+### 4. Result (unchanged)
+
+## Updated API Endpoints
+
+**New**:
+- GET `/auth/verify-email?token=xxx` - Verify email
+
+**Updated**:
+- POST `/auth/register` - Now sends verification email
+- POST `/auth/login` - Now checks email_verified
+- POST `/samples/upload` - Now requires sample_type parameter
+
+**All endpoints**: Rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+
+## New Environment Variables
+
+```bash
+# Email (choose one)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+# OR
+SENDGRID_API_KEY=SG.xxx
+
+FROM_EMAIL=noreply@instantintegrity.com
+VERIFICATION_TOKEN_EXPIRY_HOURS=24
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+
+# Sentry (optional)
+SENTRY_DSN=https://xxx@sentry.io/xxx
+SENTRY_ENVIRONMENT=development
 ```
 
-**Structure Decision**: Single web backend architecture chosen for Phase 1. Monolithic backend service simplifies development and deployment. Frontend will be added in Phase 3 as separate service. This aligns with phased delivery principle - build solid backend foundation before adding frontend complexity.
+## Implementation Phases (Updated)
 
-## Complexity Tracking
+### Phase 0: Setup (2-3 days)
+- Docker + docker-compose
+- **Email service config** [NEW]
+- **Sentry config** [NEW]
+- **Rate limiting config** [NEW]
+- Database + Redis
+- CI/CD skeleton
 
-> **This section is empty** - No constitution violations requiring justification.
+### Phase 1: Database & Models (3-4 days)
+- User model + `email_verified` [UPDATED]
+- **EmailVerificationToken model** [NEW]
+- Sample model + `sample_type` [UPDATED]
+- Result model
+- Migrations with all tables
+- Model tests
 
-All technical choices align with constitution principles. Single backend service keeps architecture simple. Standard patterns (FastAPI + PostgreSQL + Docker) avoid unnecessary complexity.
+### Phase 2: Core Security (4-5 days)
+- Password hashing
+- JWT generation/validation
+- **Email token generation** [NEW]
+- **Email sending service** [NEW]
+- **Rate limiting middleware** [NEW]
+- Security tests
+
+### Phase 3: Auth Endpoints (4-5 days)
+- Register + email sending [UPDATED]
+- **Verify email endpoint** [NEW]
+- Login + verification check [UPDATED]
+- **Rate limiting on auth** [NEW]
+- Auth integration tests
+- **Email workflow tests** [NEW]
+
+### Phase 4: Sample & Analysis (3-4 days)
+- CSV parser
+- Mock analysis
+- Upload + `sample_type` [UPDATED]
+- **Sample type validation** [NEW]
+- Get results
+- **Rate limiting on upload** [NEW]
+- Upload tests
+
+### Phase 5: Observability (2-3 days)
+- **Sentry SDK integration** [NEW]
+- **Global error handler** [NEW]
+- Structured logging
+- Health check
+- **Request context in errors** [NEW]
+
+### Phase 6: Testing & Docs (3-4 days)
+- Unit tests (80%+)
+- **Integration tests** [ENHANCED]
+- **Rate limiting tests** [NEW]
+- **Email tests** [NEW]
+- **CI: unit + integration** [UPDATED]
+- Documentation updates
+
+**Total**: 21-28 days (3-4 weeks)
+**Original**: 14-21 days (2-3 weeks)
+**Increase**: +7 days for production-ready features
+
+## Updated Project Structure
+
+```
+backend/
+├── app/
+│   ├── core/
+│   │   ├── rate_limit.py [NEW]
+│   │   └── email.py [NEW]
+│   ├── models/
+│   │   └── email_token.py [NEW]
+│   ├── middleware/ [NEW]
+│   │   ├── rate_limiter.py
+│   │   └── error_handler.py
+│   └── services/
+│       └── email_service.py [NEW]
+├── tests/
+│   ├── unit/
+│   │   ├── test_email_tokens.py [NEW]
+│   │   └── test_rate_limiting.py [NEW]
+│   └── integration/
+│       └── test_rate_limits.py [NEW]
+```
+
+## Success Criteria (Updated)
+
+✅ All original criteria PLUS:
+- Email verification tokens expire in 24 hours
+- Rate limits enforced (5 login/min, 10 upload/hour, 100 req/min)
+- Sentry captures exceptions when enabled
+- Sample types validated
+- CI completes in <15 minutes
+- Both unit + integration tests pass
+
+## Next Steps
+
+Ready for task breakdown: `/speckit.tasks`
+
+Tasks will include:
+- Email verification implementation
+- Rate limiting middleware
+- Sentry integration
+- Sample type validation
+- Enhanced CI configuration
+- All 56 functional requirements
 
 ---
 
-## Phase 0: Research & Technical Decisions
-
-*Output: research.md with technology choices, architectural patterns, and rationale*
-
+**Phase 1 Plan Updated** - Aligned with clarified specification
