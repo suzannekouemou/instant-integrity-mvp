@@ -1,4 +1,4 @@
-# Feature Specification: Phase 1 Backend Skeleton
+i ww# Feature Specification: Phase 1 Backend Skeleton
 
 **Feature Branch**: `001-phase1-backend`  
 **Created**: 2025-11-23  
@@ -100,60 +100,82 @@ An authenticated user needs to retrieve analysis results for previously uploaded
 - **FR-003**: System MUST enforce minimum password complexity: at least 8 characters
 - **FR-004**: System MUST hash passwords using bcrypt before storage, never storing plain text
 - **FR-005**: System MUST prevent duplicate email registration and return appropriate error
-- **FR-006**: System MUST provide REST API endpoint for user login accepting email and password
-- **FR-007**: System MUST generate JWT tokens upon successful authentication with configurable expiration (default 60 minutes)
-- **FR-008**: System MUST include user ID and role in JWT token payload for authorization decisions
-- **FR-009**: System MUST validate JWT tokens on all protected endpoints before processing requests
-- **FR-010**: System MUST reject expired, malformed, or invalid JWT tokens with appropriate HTTP status codes
+- **FR-006**: System MUST send verification email with unique token upon user registration
+- **FR-007**: System MUST store email verification token with expiration (24 hours) in database
+- **FR-008**: System MUST provide endpoint to verify email via token link
+- **FR-009**: System MUST mark user account as verified upon successful email verification
+- **FR-010**: System MUST allow login only for users with verified email addresses
+- **FR-011**: System MUST provide REST API endpoint for user login accepting email and password
+- **FR-012**: System MUST generate JWT tokens upon successful authentication with configurable expiration (default 60 minutes)
+- **FR-013**: System MUST include user ID and role in JWT token payload for authorization decisions
+- **FR-014**: System MUST validate JWT tokens on all protected endpoints before processing requests
+- **FR-015**: System MUST reject expired, malformed, or invalid JWT tokens with appropriate HTTP status codes
 
 #### Sample Upload & Processing
 
-- **FR-011**: System MUST provide authenticated REST API endpoint for CSV file upload
-- **FR-012**: System MUST validate CSV file structure containing wavelength and absorbance columns
-- **FR-013**: System MUST store sample metadata including filename, user ID, upload timestamp
-- **FR-014**: System MUST persist spectral data points associated with each sample
-- **FR-015**: System MUST generate mock authenticity result with status (Authentic/Suspect) and confidence score (0.80-0.95)
-- **FR-016**: System MUST return result immediately after successful upload
-- **FR-017**: System MUST link sample records to authenticated user for ownership tracking
+- **FR-016**: System MUST provide authenticated REST API endpoint for CSV file upload
+- **FR-017**: System MUST validate CSV file structure containing wavelength and absorbance columns
+- **FR-018**: System MUST accept sample_type parameter with values: flour, spice, herb, other
+- **FR-019**: System MUST store sample metadata including filename, sample_type, user ID, upload timestamp
+- **FR-020**: System MUST persist spectral data points associated with each sample
+- **FR-021**: System MUST generate mock authenticity result with status (Authentic/Suspect) and confidence score (0.80-0.95)
+- **FR-022**: System MUST return result immediately after successful upload
+- **FR-023**: System MUST link sample records to authenticated user for ownership tracking
 
 #### Result Management
 
-- **FR-018**: System MUST provide authenticated REST API endpoint to retrieve results by sample ID
-- **FR-019**: System MUST return result including status, confidence, model version, and summary
-- **FR-020**: System MUST enforce authorization ensuring users can only access their own samples
-- **FR-021**: System MUST persist results with sample ID, timestamps, and model version metadata
+- **FR-024**: System MUST provide authenticated REST API endpoint to retrieve results by sample ID
+- **FR-025**: System MUST return result including status, confidence, model version, sample_type, and summary
+- **FR-026**: System MUST enforce authorization ensuring users can only access their own samples
+- **FR-027**: System MUST persist results with sample ID, timestamps, and model version metadata
 
 #### Data Persistence & Caching
 
-- **FR-022**: System MUST persist users in PostgreSQL with UUID primary keys and created_at timestamps
-- **FR-023**: System MUST persist samples in PostgreSQL with UUID primary keys, user foreign keys, and metadata
-- **FR-024**: System MUST persist results in PostgreSQL with UUID primary keys and sample foreign keys
-- **FR-025**: System MUST connect to Redis for caching capabilities (even if not actively caching in Phase 1)
-- **FR-026**: System MUST use environment variables for all database connection strings and secrets
-- **FR-027**: System MUST implement proper database connection pooling and error handling
+- **FR-028**: System MUST persist users in PostgreSQL with UUID primary keys, email_verified boolean, and created_at timestamps
+- **FR-029**: System MUST persist email verification tokens with token string, expiration timestamp, and user foreign key
+- **FR-030**: System MUST persist samples in PostgreSQL with UUID primary keys, sample_type enum, user foreign keys, and metadata
+- **FR-031**: System MUST persist results in PostgreSQL with UUID primary keys and sample foreign keys
+- **FR-032**: System MUST connect to Redis for caching and rate limiting
+- **FR-033**: System MUST use environment variables for all database connection strings and secrets
+- **FR-034**: System MUST implement proper database connection pooling and error handling
 
 #### Infrastructure & Deployment
 
-- **FR-028**: System MUST be containerized using Docker with Dockerfile for FastAPI application
-- **FR-029**: System MUST provide docker-compose.yml orchestrating backend, PostgreSQL, and Redis services
-- **FR-030**: System MUST expose backend on configurable port (default 8000)
-- **FR-031**: System MUST define health check endpoint for container orchestration
-- **FR-032**: System MUST log application events at appropriate levels (INFO, ERROR)
-- **FR-033**: System MUST handle CORS configuration for frontend access (Phase 3 preparation)
+- **FR-035**: System MUST be containerized using Docker with Dockerfile for FastAPI application
+- **FR-036**: System MUST provide docker-compose.yml orchestrating backend, PostgreSQL, and Redis services
+- **FR-037**: System MUST expose backend on configurable port (default 8000)
+- **FR-038**: System MUST define health check endpoint for container orchestration
+- **FR-039**: System MUST log application events at appropriate levels (INFO, ERROR)
+- **FR-040**: System MUST handle CORS configuration for frontend access (Phase 3 preparation)
+- **FR-041**: System MUST configure email service (SMTP or API-based like SendGrid free tier)
+- **FR-042**: System MUST integrate Sentry SDK for error tracking, enabled when SENTRY_DSN environment variable is provided
+- **FR-043**: System MUST capture and report unhandled exceptions to Sentry when enabled
+- **FR-044**: System MUST include request context (user ID, endpoint, method) in Sentry error reports
+
+#### Security & Rate Limiting
+
+- **FR-045**: System MUST implement rate limiting on authentication endpoints: maximum 5 login attempts per minute per IP address
+- **FR-046**: System MUST implement rate limiting on registration endpoint: maximum 3 registrations per hour per IP address
+- **FR-047**: System MUST implement rate limiting on upload endpoint: maximum 10 uploads per hour per authenticated user
+- **FR-048**: System MUST implement general API rate limiting: maximum 100 requests per minute per authenticated user
+- **FR-049**: System MUST use Redis to store rate limit counters with appropriate expiration
+- **FR-050**: System MUST return HTTP 429 (Too Many Requests) with Retry-After header when rate limits exceeded
 
 #### Input Validation & Error Handling
 
-- **FR-034**: System MUST validate all API inputs using Pydantic schemas
-- **FR-035**: System MUST return consistent error response format with status code, message, and optional details
-- **FR-036**: System MUST not expose stack traces or internal errors in API responses
-- **FR-037**: System MUST enforce maximum file size limit for CSV uploads (default 10MB)
-- **FR-038**: System MUST sanitize file names to prevent path traversal attacks
+- **FR-051**: System MUST validate all API inputs using Pydantic schemas
+- **FR-052**: System MUST return consistent error response format with status code, message, and optional details
+- **FR-053**: System MUST not expose stack traces or internal errors in API responses
+- **FR-054**: System MUST enforce maximum file size limit for CSV uploads (default 10MB)
+- **FR-055**: System MUST sanitize file names to prevent path traversal attacks
+- **FR-056**: System MUST validate sample_type parameter against allowed enum values (flour, spice, herb, other)
 
 ### Key Entities
 
-- **User**: Represents registered platform users with email (unique identifier), password hash, optional role designation, and creation timestamp
-- **Sample**: Represents uploaded spectral data with filename, spectra points (array/JSON), metadata (device type, location, timestamp), and ownership link to User
+- **User**: Represents registered platform users with email (unique identifier), password hash, email_verified boolean, optional role designation, and creation timestamp
+- **Sample**: Represents uploaded spectral data with filename, sample_type (enum: flour/spice/herb/other), spectra points (array/JSON), metadata (device type, location, timestamp), and ownership link to User
 - **Result**: Represents analysis outcomes with status (Authentic/Suspect/Verify), confidence score (float 0-1), model version identifier, summary text, and link to Sample
+- **EmailVerificationToken**: Represents email verification tokens with token string, expiration timestamp, used boolean, and link to User
 
 ## Success Criteria *(mandatory)*
 
@@ -196,21 +218,35 @@ The following are explicitly **not** included in Phase 1:
 - Real chemometric preprocessing or machine learning models
 - Batch processing of multiple samples
 - Advanced visualization or dashboard UI
-- Email verification or password reset flows
+- Password reset flows (requires verified email from Phase 1)
 - User profile management beyond basic registration
 - Sample sharing between users
 - Export functionality (CSV/PDF reports)
 - Mobile application or device SDK integration
-- Rate limiting or abuse prevention
-- Advanced monitoring (Prometheus, Grafana, Sentry)
+- Advanced monitoring (Prometheus, Grafana)
 - Frontend application (Next.js) - Phase 3
 - Role-based access control - Phase 3
 - Cloud deployment beyond optional demo - Phase 4
+- Advanced rate limiting features (IP blocking, exponential backoff, distributed rate limiting) - Phase 2
+- Advanced email features (email templates, transactional email tracking, bounce handling) - Phase 2
+- Advanced Sentry features (performance monitoring, custom tags, release tracking) - Phase 2
 
 ## Notes
 
-- **Testing strategy**: Phase 1 requires comprehensive unit tests for authentication and integration tests for API endpoints before merge to dev
+- **Testing strategy**: Phase 1 requires comprehensive unit tests for authentication, security functions, and business logic, plus integration tests for all API endpoints. Both test suites MUST run in CI pipeline before merge to dev.
+- **CI/CD pipeline**: GitHub Actions MUST run unit tests, integration tests (with test database), linting, and Docker build on all PRs to dev and main branches.
 - **Documentation priority**: Code should be well-commented; API documentation auto-generated via FastAPI's built-in Swagger UI
 - **Migration strategy**: Use Alembic for database migrations from the start to enable clean schema evolution
 - **Security review**: JWT secret must be strong random value in production; document environment variable requirements clearly
+- **Email service**: Use free-tier email service (SendGrid, AWS SES sandbox, or SMTP) for Phase 1; production email service in Phase 4
 - **Performance baseline**: Establish baseline metrics in Phase 1 (response times, concurrent users) for comparison in later phases
+
+## Clarifications
+
+### Session 2025-11-23
+- Q: Should Phase 1 include API integration tests in CI pipeline or just unit tests? → A: Yes, both unit and integration tests - Complete coverage, ~5-10 min CI time, catches all issues
+- Q: Should the system support multiple sample types (e.g., flour, spices, herbs) with type-specific validation in Phase 1, or treat all samples uniformly? → A: Yes, add basic sample types - Add sample_type enum field (flour, spice, herb, other), store in metadata
+- Q: Should basic Sentry integration be included in Phase 1 for error tracking and debugging, or keep it fully optional? → A: Yes, implement with env flag - Sentry SDK integrated, enabled only when SENTRY_DSN provided
+- Q: Should email verification be included in Phase 1 to ensure users provide valid email addresses and prevent fake account creation? → A: Yes, add basic email verification - Send verification link, require verification before full access
+
+- Q: Should basic rate limiting and abuse prevention be included in Phase 1 to protect authentication endpoints from brute force attacks and upload endpoint from resource exhaustion? → A: Yes, add basic rate limiting - Simple Redis-based limits: 5 login attempts/min, 10 uploads/hour per user, 100 API calls/min
