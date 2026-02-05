@@ -81,11 +81,21 @@ A proof-of-concept platform that delivers instant authenticity analysis using sp
 git clone <repository-url>
 cd instant-integrity-mvp
 
+# Copy environment file
+cp backend/.env.example backend/.env
+# Edit backend/.env with your configuration
+
 # Start services with docker-compose
 docker-compose up -d
 
-# Access the API
-curl http://localhost:8000/docs
+# Run database migrations
+docker-compose exec backend alembic upgrade head
+
+# Access the API documentation
+open http://localhost:8000/docs
+
+# Check health
+curl http://localhost:8000/health
 ```
 
 ### Development Setup
@@ -99,11 +109,54 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 cd backend
 pip install -r requirements.txt
 
-# Run tests
-pytest
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your local configuration
+
+# Run database migrations
+alembic upgrade head
+
+# Run tests with coverage
+pytest --cov=app --cov-report=term-missing
 
 # Start development server
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/v1/auth/register` - Register new user
+- `GET /api/v1/auth/verify-email?token=xxx` - Verify email address
+- `POST /api/v1/auth/login` - Login and receive JWT token
+
+### Samples (Authenticated)
+- `POST /api/v1/samples/upload` - Upload CSV spectral data
+  - Requires: JWT token, CSV file, sample_type (flour/spice/herb/other)
+  - Returns: Mock authenticity result
+
+### Results (Authenticated)
+- `GET /api/v1/results/{sample_id}` - Retrieve analysis result
+
+### System
+- `GET /health` - Health check (database and Redis status)
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
+
+## Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_security.py
+
+# Run integration tests only
+pytest tests/integration/
 ```
 
 ## Branching Strategy
@@ -164,5 +217,6 @@ For questions or support, please create a GitHub issue.
 
 ---
 
-**Status**: 🚧 Phase 1 in progress  
-**Last Updated**: 2025-11-23
+**Status**: ✅ Phase 1 Complete (85/93 tasks)  
+**Last Updated**: 2025-11-24  
+**Next Phase**: Phase 2 - Chemometric Model Integration

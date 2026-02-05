@@ -1,4 +1,4 @@
-i ww# Feature Specification: Phase 1 Backend Skeleton
+# Feature Specification: Phase 1 Backend Skeleton
 
 **Feature Branch**: `001-phase1-backend`  
 **Created**: 2025-11-23  
