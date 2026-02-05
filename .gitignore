@@ -62,3 +62,7 @@ htmlcov/
 models/*.joblib
 models/*.pkl
 !models/.gitkeep
+.venv/
+node_modules/
+.next/
+backend/.env

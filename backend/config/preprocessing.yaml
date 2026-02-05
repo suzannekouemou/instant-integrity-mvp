@@ -1,0 +1,34 @@
+# Preprocessing Configuration for Spectral Data Analysis
+# Phase 2: Chemometric Model Integration
+
+baseline:
+  method: als  # Options: als, polynomial
+  polynomial_degree: 3  # Used if method=polynomial
+  als_lambda: 100000  # Smoothness parameter for ALS
+  als_p: 0.01  # Asymmetry parameter for ALS
+
+noise_reduction:
+  method: savgol  # Options: savgol, none
+  window_size: 11  # Must be odd number
+  polynomial_order: 3
+
+normalization:
+  method: snv  # Options: snv, mean_center, none
+
+wavelength:
+  min: 400  # nm - minimum wavelength
+  max: 2500  # nm - maximum wavelength
+  tolerance: 5  # nm - tolerance for range matching
+
+pca:
+  variance_threshold: 0.95  # Retain components explaining 95% variance
+
+classifier:
+  kernel: rbf  # RBF kernel for one-class SVM
+  gamma: scale  # Auto-scaling
+  nu: 0.1  # Upper bound on fraction of outliers
+
+thresholds:
+  authentic: 0.8  # Confidence > 0.8 = Authentic
+  suspect: 0.5  # Confidence < 0.5 = Suspect
+  # Between 0.5-0.8 = Verify (send to lab)
