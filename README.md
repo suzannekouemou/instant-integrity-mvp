@@ -11,212 +11,173 @@ A proof-of-concept platform that delivers instant authenticity analysis using sp
 ## Key Features
 
 - **Data Acquisition**: Integration with handheld and benchtop spectroscopy devices (FTIR, NIR)
-- **Cloud-Based Chemometric Analysis**: Noise reduction, PCA, multivariate modeling, AI-powered authenticity predictions
+- **Cloud-Based Chemometric Analysis**: Noise reduction, Savitzky-Golay smoothing, SNV normalization, AI-powered authenticity predictions
 - **Decision Support**: Instant results (seconds), batch-level screening, clear authenticity indicators
-- **Supply Chain Integration**: End-to-end visibility, mobile app support, cloud accessibility
-- **Business Benefits**: Cost-effective, unlimited testing, reduced carbon footprint, regulatory support
+- **Supply Chain Integration**: End-to-end visibility, cloud accessibility
+- **Dark Mode UI**: Full light/dark theme support with system preference detection
 
 ## Technology Stack
 
+### Frontend
+- **Next.js 14** with React 18
+- **TailwindCSS** with dark mode (`class` strategy)
+- **Recharts** for spectral data visualization
+- **Lucide React** for iconography
+
 ### Backend
 - **Python 3.11+** with FastAPI
-- **PostgreSQL 15+** for data persistence
-- **Redis 7+** for caching
-- **SQLAlchemy** for ORM
+- **Supabase** for PostgreSQL database and authentication
 - **Pydantic** for data validation
 
-### ML/Science
-- **NumPy, SciPy** for numerical computing
-- **scikit-learn** for chemometric models (PCA, classifiers)
-- **matplotlib** for visualization
+### ML / AI
+- **HuggingFace Inference API** for zero-shot classification (`facebook/bart-large-mnli`)
+- **NumPy, SciPy** for spectral preprocessing (baseline correction, Savitzky-Golay, SNV)
 
-### Security
-- **JWT** authentication
-- **Bcrypt** password hashing
-- **python-jose** for token management
-
-### DevOps
-- **Docker** and docker-compose
+### Infrastructure
+- **Supabase Cloud** for auth + database
 - **GitHub Actions** for CI/CD
-- **Heroku/Render** (optional deployment)
 
-## Project Phases
+## Architecture
 
-### Phase 1: Backend Skeleton & Project Setup
-- GitHub repository with CI/CD pipeline
-- FastAPI backend with JWT authentication
-- PostgreSQL + Redis integration
-- Mock sample upload endpoint
-- Dockerized environment
+```
+Next.js 14 Frontend
+    ├── Dashboard (stats, recent results)
+    ├── SpectralChart (recharts)
+    ├── ConfidenceGauge (SVG)
+    └── ThemeToggle (dark/light/system)
+         │
+         ▼
+FastAPI Backend
+    ├── Auth Middleware → Supabase Auth
+    ├── Preprocessing Pipeline
+    │   ├── Baseline Correction
+    │   ├── Savitzky-Golay Smoothing
+    │   └── SNV Normalization
+    └── HuggingFace Client → Zero-Shot Classification
+         │
+         ▼
+Supabase Cloud
+    ├── PostgreSQL (samples, results, users)
+    └── Auth (registration, login, JWT)
+```
 
-### Phase 2: Chemometric Model Integration
-- Preprocessing pipeline (baseline correction, noise reduction, PCA)
-- Simple classifier (authentic vs suspect)
-- Real model predictions replacing mock results
-- Batch-level analysis endpoints
-
-### Phase 3: Frontend & Supply Chain Workflow
-- Next.js + Tailwind dashboard
-- Role-based access control
-- Batch summaries and reports
-- CSV/PDF export functionality
-
-### Phase 4: Scaling & Observability
-- Kubernetes deployment manifests
-- Prometheus metrics + Grafana dashboards
-- Sentry error tracking
-- Performance testing and optimization
+See [Architecture Diagrams](docs/diagrams/) for detailed Mermaid diagrams.
 
 ## Getting Started
 
 ### Prerequisites
-- Docker and docker-compose
-- Git
-- Python 3.11+ (for local development)
+- **Node.js 18+** and npm (frontend)
+- **Python 3.11+** (backend)
+- **Supabase account** (free tier works)
+- **HuggingFace API token** (free tier works)
 
-### Quick Start
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd instant-integrity-mvp
-
-# Copy environment file
-cp backend/.env.example backend/.env
-# Edit backend/.env with your configuration
-
-# Start services with docker-compose
-docker-compose up -d
-
-# Run database migrations
-docker-compose exec backend alembic upgrade head
-
-# Access the API documentation
-open http://localhost:8000/docs
-
-# Check health
-curl http://localhost:8000/health
-```
-
-### Development Setup
+### Backend Setup
 
 ```bash
-# Create and activate virtual environment
+cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-cd backend
 pip install -r requirements.txt
 
-# Set up environment variables
+# Configure environment
 cp .env.example .env
-# Edit .env with your local configuration
+# Edit .env with your Supabase and HuggingFace credentials
 
-# Run database migrations
-alembic upgrade head
-
-# Run tests with coverage
-pytest --cov=app --cov-report=term-missing
+# Run tests (30 tests expected)
+python -m pytest
 
 # Start development server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+
+# Start development server
+npm run dev
+
+# Production build
+npm run build
+```
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SUPABASE_URL` | Supabase project URL | Yes |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key | Yes |
+| `HUGGINGFACE_API_KEY` | HuggingFace API token | Yes |
+
 ## API Endpoints
 
 ### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `GET /api/v1/auth/verify-email?token=xxx` - Verify email address
-- `POST /api/v1/auth/login` - Login and receive JWT token
+- `POST /api/v1/auth/register` — Register new user via Supabase
+- `POST /api/v1/auth/login` — Login and receive session token
 
 ### Samples (Authenticated)
-- `POST /api/v1/samples/upload` - Upload CSV spectral data
-  - Requires: JWT token, CSV file, sample_type (flour/spice/herb/other)
-  - Returns: Mock authenticity result
+- `POST /api/v1/samples/upload` — Upload CSV spectral data
+  - Requires: auth token, CSV file, sample_type (flour/spice/herb/other)
+  - Returns: authenticity prediction with confidence score
 
 ### Results (Authenticated)
-- `GET /api/v1/results/{sample_id}` - Retrieve analysis result
+- `GET /api/v1/results/{sample_id}` — Retrieve analysis result
 
 ### System
-- `GET /health` - Health check (database and Redis status)
-- `GET /docs` - Interactive API documentation (Swagger UI)
-- `GET /redoc` - Alternative API documentation (ReDoc)
+- `GET /health` — Health check
+- `GET /docs` — Interactive API documentation (Swagger UI)
 
 ## Testing
 
 ```bash
-# Run all tests
-pytest
+# Backend tests (30 tests)
+cd backend
+source venv/bin/activate
+python -m pytest
 
-# Run with coverage report
-pytest --cov=app --cov-report=html
+# With coverage
+python -m pytest --cov=app --cov-report=term-missing
 
-# Run specific test file
-pytest tests/unit/test_security.py
-
-# Run integration tests only
-pytest tests/integration/
+# Frontend build check
+cd frontend
+npm run build
 ```
 
-## Branching Strategy
+## Project Status
 
-- `main`: Production-ready, stable code
-- `dev`: Integration branch for completed features
-- `feature/<feature-name>`: Individual feature branches
-- `hotfix/<issue>`: Critical fixes
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | ✅ Complete | Backend skeleton, API, project setup |
+| Phase 2 | ✅ Complete | Chemometric models, HuggingFace integration, preprocessing pipeline |
+| Phase 3 | ✅ Complete | Next.js frontend, dashboard, dark mode, spectral charts, confidence gauge |
+| Phase 4 | Planned | Scaling, observability, deployment |
 
-### Workflow
+## UI Components
 
-1. Create feature branch from `dev`: `git checkout -b feature/jwt-auth dev`
-2. Implement feature with tests
-3. Create Pull Request to `dev`
-4. After review and CI pass, merge to `dev`
-5. Periodically merge `dev` to `main` for releases
-
-## Versioning
-
-This project follows [Semantic Versioning](https://semver.org/):
-- **MAJOR**: Breaking changes to core principles or APIs
-- **MINOR**: New features, backward-compatible
-- **PATCH**: Bug fixes, documentation updates
-
-Current Version: **0.1.0** (Phase 1 in progress)
-
-## Contributing
-
-1. Check the constitution at `.specify/memory/constitution.md`
-2. Create a GitHub issue for your feature/bug
-3. Create a feature branch
-4. Write tests first (TDD)
-5. Implement feature
-6. Submit Pull Request with issue reference
+| Component | File | Purpose |
+|-----------|------|---------|
+| SpectralChart | `frontend/src/components/SpectralChart.tsx` | Recharts-based spectral data visualization |
+| ConfidenceGauge | `frontend/src/components/ConfidenceGauge.tsx` | SVG circular confidence indicator |
+| ThemeProvider | `frontend/src/components/ThemeProvider.tsx` | Dark/light/system theme context |
+| ThemeToggle | `frontend/src/components/ThemeToggle.tsx` | Sun/Moon/Monitor theme switcher |
+| Dashboard | `frontend/src/app/dashboard/page.tsx` | Stats overview, recent results, upload CTA |
 
 ## Documentation
 
-- [Constitution](.specify/memory/constitution.md) - Core principles and governance
-- [Proof of Concept Document](Proof%20of%20Concept%20Document.md) - Project vision and architecture
-- [Technical Documentation – Phase 1](📄%20Technical%20Documentation%20–%20Phase%201.md) - Detailed Phase 1 specs
-
-## Security
-
-See our [Constitution](.specify/memory/constitution.md) for security principles. Key points:
-- JWT authentication required
-- No hardcoded secrets
-- Bcrypt password hashing
-- Input validation on all endpoints
-- Audit trails for all operations
+- [Architecture Diagrams](docs/diagrams/) — System architecture, user flow, data flow (Mermaid)
+- [Design System](frontend/DESIGN_SYSTEM.md) — Colors, typography, components, accessibility
+- [Constitution](.specify/memory/constitution.md) — Core principles and governance
+- [Proof of Concept](Proof%20of%20Concept%20Document.md) — Project vision and architecture
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Contact
-
-For questions or support, please create a GitHub issue.
+MIT License — See LICENSE file for details.
 
 ---
 
-**Status**: ✅ Phase 1 Complete (85/93 tasks)  
-**Last Updated**: 2025-11-24  
-**Next Phase**: Phase 2 - Chemometric Model Integration
+**Status**: ✅ Phase 3 Complete  
+**Last Updated**: 2026-02-28  
+**Next Phase**: Phase 4 — Scaling & Observability
