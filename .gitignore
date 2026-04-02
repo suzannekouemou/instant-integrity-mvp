@@ -66,3 +66,10 @@ models/*.pkl
 node_modules/
 .next/
 backend/.env
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Next.js static export
+frontend/out/
