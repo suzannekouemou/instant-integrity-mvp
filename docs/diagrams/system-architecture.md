@@ -2,18 +2,20 @@
 
 ## Overview
 
-Instant Integrity MVP uses a cloud-native architecture with Next.js frontend, FastAPI backend, Supabase for authentication and persistence, and HuggingFace for AI-powered authenticity classification.
+Instant Integrity MVP uses a cloud-native architecture with a Tauri v2 desktop wrapper embedding a Next.js static export, communicating directly with Supabase for authentication/persistence and HuggingFace for AI-powered authenticity classification.
 
 ## Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph "Frontend (Next.js 14)"
-        UI[Dashboard UI]
-        SC[SpectralChart]
-        CG[ConfidenceGauge]
-        TT[ThemeToggle]
-        AG[AuthGuard]
+    subgraph "Tauri v2 Desktop Shell"
+        subgraph "Frontend (Next.js Static Export)"
+            UI[Dashboard UI]
+            SC[SpectralChart]
+            CG[ConfidenceGauge]
+            TT[ThemeToggle]
+            AG[AuthGuard]
+        end
     end
 
     subgraph "Backend (FastAPI)"
@@ -45,6 +47,14 @@ graph TB
     ZSC --> MODEL
     API --> DB
 ```
+
+## Desktop Distribution
+
+| Platform | Bundle Format | Location |
+|----------|---------------|----------|
+| Linux | .deb, .AppImage | `src-tauri/target/release/bundle/` |
+| Windows | .msi | `src-tauri/target/release/bundle/msi/` |
+| macOS | .dmg, .app | `src-tauri/target/release/bundle/macos/` |
 
 ## Component Details
 
